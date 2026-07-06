@@ -11,6 +11,7 @@ from starlette.types import Lifespan
 from typing_extensions import deprecated
 
 from adapter import ModelAdapter
+import routing 
 # Generalization and Prompting IDE
 AppType = TypeVar("AppType", bound="QuickMLOps")
 
@@ -51,7 +52,7 @@ class QuickMLOps(Starlette):
         ] = "QuickMLOps",
         root_path: Annotated[
             str,
-            Doc()
+            Doc("")
         ] = ""
     ):
         self.ml_model = ModelAdapter(user_model=ml_model)
@@ -65,4 +66,9 @@ class QuickMLOps(Starlette):
         self.exception_handlers: dict[
             Any, Callable[[Request, Any], Response | Awaitable[Response]]
         ] = {} if exception_handlers is None else dict(exception_handlers)
+
+        self.router: routing.APIRouter = routing.APIRouter(routes=routes)
+
+    def include_router()-> None:
+        pass
 
