@@ -1,1 +1,1 @@
-# AutoMLOps
+# QuickMLOps
