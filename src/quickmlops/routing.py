@@ -1,14 +1,30 @@
-from typing import Annotated, Any, TypeVar, Awaitable
+import json
+from inspect import isawaitable
 from annotated_doc import Doc
 from typing_extensions import deprecated
-
+from typing import Annotated, Any, TypeVar, Awaitable
 from collections.abc import Callable, Coroutine, Sequence
 
 from starlette import routing
+from starlette.requests import Request
+from starlette.responses import Response
 from starlette.routing import BaseRoute
-from starlette.types import ASGIApp
+from starlette.types import ASGIApp, Scope, Receive, Send
 
-DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
+from quickmlops.types import DecoratedCallable
+
+def request_response(func: Callable[[Request], Awaitable[Request] | Request]) -> ASGIApp:
+    async def app(scope: Scope, receive: Receive, send: Send):
+        request = Request(scope, receive=receive)
+
+        response = func(request)
+
+        if isawaitable(response):
+            response = await response
+
+        await response(scope, receive, send)
+
+    return app
 
 class APIRoute(routing.Route):
     def __init__(self, path, endpoint, methods=None, name=None):
@@ -18,6 +34,36 @@ class APIRoute(routing.Route):
             methods=methods,
             name=name
         )
+        self.app = request_response(self.get_route_handler())
+
+    def matches(self, scope: Scope):
+        return super().matches(scope)
+    
+    def handle(self, scope: Scope, receive: Receive, send: Send):
+        return super().handle(scope, receive, send)
+    
+    def get_route_handler(self) -> Callable[[Request], dict[str, Any] | Response | Any]:
+        endpoint = self.endpoint
+
+        async def app(request: Request) -> Response:
+            reslut = endpoint(request)
+
+            if isawaitable(reslut):
+                await reslut
+            
+            if isinstance(reslut, dict):
+                return Response(
+                    json.dumps(reslut),
+                    media_type="application/json",
+                )
+            
+            return Response(
+                json.dumps({'detail':str(reslut)}),
+                media_type="application/json",
+            )
+        
+        return app
+
 
 class APIRouter(routing.Router):
     def __init__(
