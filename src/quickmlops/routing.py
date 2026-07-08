@@ -59,6 +59,9 @@ class APIRouter(routing.Router):
         methods: set[str] | list[str] | None = None,
         name: str | None = None
     ) -> None:
+        
+        assert path.startswith('/')
+
         route = self.route_class(
             self.prefix + path,
             endpoint,
@@ -87,6 +90,23 @@ class APIRouter(routing.Router):
             return func
         
         return decorator
+
+    def include_router(
+        self,
+        router: Annotated["APIRouter", Doc("")],
+        *,
+        prefix: Annotated[str, Doc("")] = ""
+    ) -> None:
+        if prefix:
+            assert prefix.startswith("/"), "A path prefix must start with '/'"
+            assert not prefix.endswith("/"), (
+                "A path prefix must not end with '/', as the routes will start with '/'"
+            )
+
+        for route in router.routes:
+            route.path = prefix + route.path
+            self.routes.append(route)
+
 
     def get(
         self,

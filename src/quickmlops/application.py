@@ -7,11 +7,12 @@ from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import BaseRoute
-from starlette.types import Lifespan
+from starlette.types import Lifespan, ASGIApp
+from starlette.datastructures import State
 from typing_extensions import deprecated
 
-from adapter import ModelAdapter
-import routing 
+from quickmlops.adapter import ModelAdapter
+import quickmlops.routing as routing
 # Generalization and Prompting IDE
 AppType = TypeVar("AppType", bound="QuickMLOps")
 
@@ -59,6 +60,8 @@ class QuickMLOps(Starlette):
         self.debug = debug
         self.title = title
         self.root_path = root_path
+        self.state: Annotated[State, Doc("")] = State()
+        self.middleware_stack: ASGIApp | None = None
 
         self.user_middleware: list[Middleware] = (
             [] if middleware is None else list(middleware)
