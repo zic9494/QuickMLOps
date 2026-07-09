@@ -13,6 +13,7 @@ from typing_extensions import deprecated
 
 from quickmlops.adapter import ModelAdapter
 import quickmlops.routing as routing
+from quickmlops.types import DecoratedCallable
 # Generalization and Prompting IDE
 AppType = TypeVar("AppType", bound="QuickMLOps")
 
@@ -20,11 +21,11 @@ AppType = TypeVar("AppType", bound="QuickMLOps")
 class QuickMLOps(Starlette):
     def __init__(
         self: AppType,
-        *,
         ml_model: Annotated[
             Any,
             Doc("")
         ],
+        *,
         debug: Annotated[
             bool,
             Doc("")
@@ -56,7 +57,7 @@ class QuickMLOps(Starlette):
             Doc("")
         ] = ""
     ):
-        self.ml_model = ModelAdapter(user_model=ml_model)
+        # self.ml_model = ModelAdapter(user_model=ml_model)
         self.debug = debug
         self.title = title
         self.root_path = root_path
@@ -72,6 +73,75 @@ class QuickMLOps(Starlette):
 
         self.router: routing.APIRouter = routing.APIRouter(routes=routes)
 
-    def include_router()-> None:
-        pass
+    def include_router(self,
+        router: Annotated[routing.APIRouter,Doc("")],
+        *,
+        prefix: Annotated[str, Doc("")]
+    )-> None:
+        return self.router.include_router(router, prefix=prefix)
+
+    def api_route(
+        self,
+        path: Annotated[str, Doc("")],
+        *,
+        methods: Annotated[list[str] | None, Doc("")] = None,
+        name: Annotated[str | None, Doc("")] = None
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        return self.router.api_route(path, methods=methods, name=name)
+
+    def get(
+        self,
+        path: Annotated[str, Doc("")],
+        name: Annotated[str | None, Doc("")] = None
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        return self.router.get(path, name=name)
+
+    def options(
+        self,
+        path: Annotated[str, Doc("")],
+        name: Annotated[str | None, Doc("")] = None
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        return self.router.options(path, name=name)
+
+    def head(
+        self,
+        path: Annotated[str, Doc("")],
+        name: Annotated[str | None, Doc("")] = None
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        return self.router.head(path, name=name)
+
+    def post(
+        self,
+        path: Annotated[str, Doc("")],
+        name: Annotated[str | None, Doc("")] = None
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        return self.router.post(path, name=name)
+
+    def put(
+        self,
+        path: Annotated[str, Doc("")],
+        name: Annotated[str | None, Doc("")] = None
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        return self.router.put(path, name=name)
+
+    def delete(
+        self,
+        path: Annotated[str, Doc("")],
+        name: Annotated[str | None, Doc("")] = None
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        return self.router.delete(path, name=name)
+
+    def patch(
+        self,
+        path: Annotated[str, Doc("")],
+        name: Annotated[str | None, Doc("")] = None
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        return self.router.patch(path, name=name)
+
+    def trace(
+        self,
+        path: Annotated[str, Doc("")],
+        name: Annotated[str | None, Doc("")] = None
+    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
+        return self.router.trace(path, name=name)
 
