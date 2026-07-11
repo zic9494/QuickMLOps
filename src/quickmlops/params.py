@@ -3,6 +3,7 @@ from types import UnionType
 from inspect import Parameter
 
 from starlette.requests import Request
+from starlette.responses import Response
 
 class Param:
     source: str
@@ -32,6 +33,7 @@ class Cookie(Param):
 
 def _get_params_value(
     request: Request,
+    response: Response,
     name: str,
     annotation: Any,
     default: Any
@@ -41,6 +43,9 @@ def _get_params_value(
     if real_type is Request:
         return request
     
+    if real_type is Response:
+        return response
+
     if marker is None:
         if name == "request":
             return request

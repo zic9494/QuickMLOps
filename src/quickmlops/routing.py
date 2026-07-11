@@ -48,11 +48,12 @@ class APIRoute(routing.Route):
 
         async def app(request: Request) -> Response:
             kwargs = {}
-
+            temp_response = Response()
             try:
                 for param in dependant.parameters.values():
                     kwargs[param.name] = _get_params_value(
                         request=request,
+                        response=temp_response,
                         name=param.name,
                         annotation= param.annotation,
                         default=param.default
@@ -68,15 +69,25 @@ class APIRoute(routing.Route):
                 result = await result
             
             if isinstance(result, dict):
-                return Response(
-                    json.dumps(result),
-                    media_type="application/json",
-                )
+                content = json.dumps(result)
+            else :
+                content = json.dumps({'detail':str(result)})
             
-            return Response(
-                json.dumps({'detail':str(result)}),
+            final_response = Response(
+                content,
+                status_code=temp_response.status_code,
                 media_type="application/json",
             )
+
+            excluded_headers = {b"content-length", b"content-type"}
+
+            final_response.raw_headers.extend(
+                (key, value)
+                for key, value in temp_response.raw_headers
+                if key.lower() not in excluded_headers
+            )
+
+            return final_response
         
         return app
 

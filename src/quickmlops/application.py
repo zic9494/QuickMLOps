@@ -76,7 +76,7 @@ class QuickMLOps(Starlette):
     def include_router(self,
         router: Annotated[routing.APIRouter,Doc("")],
         *,
-        prefix: Annotated[str, Doc("")]
+        prefix: Annotated[str, Doc("")] = ""
     )-> None:
         return self.router.include_router(router, prefix=prefix)
 
