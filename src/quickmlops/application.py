@@ -24,7 +24,7 @@ class QuickMLOps(Starlette):
         ml_model: Annotated[
             Any,
             Doc("")
-        ],
+        ] = None,
         *,
         debug: Annotated[
             bool,

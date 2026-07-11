@@ -7,7 +7,7 @@ from collections.abc import Callable, Coroutine, Sequence
 
 from starlette import routing
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import Response, JSONResponse
 from starlette.routing import BaseRoute
 from starlette.types import ASGIApp, Scope, Receive, Send
 
@@ -59,9 +59,9 @@ class APIRoute(routing.Route):
                         default=param.default
                     )
             except ValueError as exc:
-                return json.JSONDecodeError(
+                return JSONResponse(
                     {"detail": str(exc)},
-                    stautus_code = 422,
+                    status_code=422,
                 )
             result = endpoint(**kwargs)
 
@@ -178,7 +178,14 @@ class APIRouter(routing.Router):
 
         for route in router.routes:
             route.path = prefix + route.path
+            if isinstance(route, routing.Route):
+                (
+                    route.path_regex,
+                    route.path_format,
+                    route.param_convertors,
+                ) = routing.compile_path(route.path)
             self.routes.append(route)
+            self._mark_route_changed()
 
 
     def get(

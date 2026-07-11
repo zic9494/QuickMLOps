@@ -90,7 +90,7 @@ def _unwarp_annotated(annotation: Any) -> tuple[Any, Param | None]:
             if isinstance(meta, Param):
                 return real_type, meta
             
-        return None
+        return real_type, None
     return annotation, None
     
 def _convert_value(value: Any, annotation: Any) -> Any:
