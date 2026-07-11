@@ -1,5 +1,5 @@
 import json
-from inspect import isawaitable
+from inspect import isawaitable, signature
 from annotated_doc import Doc
 from typing_extensions import deprecated
 from typing import Annotated, Any, TypeVar, Awaitable
@@ -12,11 +12,11 @@ from starlette.routing import BaseRoute
 from starlette.types import ASGIApp, Scope, Receive, Send
 
 from quickmlops.types import DecoratedCallable
+from quickmlops.params import _get_params_value
 
 def request_response(func: Callable[[Request], Awaitable[Request] | Request]) -> ASGIApp:
     async def app(scope: Scope, receive: Receive, send: Send):
         request = Request(scope, receive=receive)
-
         response = func(request)
 
         if isawaitable(response):
@@ -44,21 +44,37 @@ class APIRoute(routing.Route):
     
     def get_route_handler(self) -> Callable[[Request], dict[str, Any] | Response | Any]:
         endpoint = self.endpoint
+        dependant = signature(endpoint)
 
         async def app(request: Request) -> Response:
-            reslut = endpoint(request)
+            kwargs = {}
 
-            if isawaitable(reslut):
-                await reslut
+            try:
+                for param in dependant.parameters.values():
+                    kwargs[param.name] = _get_params_value(
+                        request=request,
+                        name=param.name,
+                        annotation= param.annotation,
+                        default=param.default
+                    )
+            except ValueError as exc:
+                return json.JSONDecodeError(
+                    {"detail": str(exc)},
+                    stautus_code = 422,
+                )
+            result = endpoint(**kwargs)
+
+            if isawaitable(result):
+                result = await result
             
-            if isinstance(reslut, dict):
+            if isinstance(result, dict):
                 return Response(
-                    json.dumps(reslut),
+                    json.dumps(result),
                     media_type="application/json",
                 )
             
             return Response(
-                json.dumps({'detail':str(reslut)}),
+                json.dumps({'detail':str(result)}),
                 media_type="application/json",
             )
         
