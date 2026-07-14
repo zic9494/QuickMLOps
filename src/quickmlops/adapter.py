@@ -11,7 +11,7 @@ class ModelAdapter:
         self.framework = self._detect_framework()
 
     def _predict_kind(self):
-        if hasattr(self.user_model, "predict"):
+        if callable(getattr(self.user_model, "predict", None)):
             return "predict"
 
         if callable(self.user_model):
