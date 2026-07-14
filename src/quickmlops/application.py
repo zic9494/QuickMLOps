@@ -11,9 +11,9 @@ from starlette.types import Lifespan, ASGIApp
 from starlette.datastructures import State
 from typing_extensions import deprecated
 
-from quickmlops.adapter import ModelAdapter
+from quickmlops.model_service import ModelService
 import quickmlops.routing as routing
-from quickmlops.types import DecoratedCallable
+from quickmlops.types_defs import DecoratedCallable
 # Generalization and Prompting IDE
 AppType = TypeVar("AppType", bound="QuickMLOps")
 
@@ -57,7 +57,7 @@ class QuickMLOps(Starlette):
             Doc("")
         ] = ""
     ):
-        # self.ml_model = ModelAdapter(user_model=ml_model)
+        self.user_model = ModelService(ml_model=ml_model)
         self.debug = debug
         self.title = title
         self.root_path = root_path
@@ -72,6 +72,10 @@ class QuickMLOps(Starlette):
         ] = {} if exception_handlers is None else dict(exception_handlers)
 
         self.router: routing.APIRouter = routing.APIRouter(routes=routes)
+    
+    def deploy_home_page(self) -> None:
+        home_page_route = routing.APIRoute("/", self.user_model.home_page(), ["GET"])
+
 
     def include_router(self,
         router: Annotated[routing.APIRouter,Doc("")],

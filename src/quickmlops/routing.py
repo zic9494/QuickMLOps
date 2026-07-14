@@ -11,7 +11,7 @@ from starlette.responses import Response, JSONResponse
 from starlette.routing import BaseRoute
 from starlette.types import ASGIApp, Scope, Receive, Send
 
-from quickmlops.types import DecoratedCallable
+from quickmlops.types_defs import DecoratedCallable
 from quickmlops.params import _get_params_value
 
 def request_response(func: Callable[[Request], Awaitable[Request] | Request]) -> ASGIApp:
