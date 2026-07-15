@@ -1,4 +1,5 @@
 from typing import Any
+from functools import wraps
 
 class ModelAdapter:
     def __init__(self, user_model: Any):
@@ -9,6 +10,26 @@ class ModelAdapter:
         self.model_qualname = self.model_class.__qualname__
         self.model_class_path = f"{self.model_module}.{self.model_qualname}"
         self.framework = self._detect_framework()
+
+    def __getattr__(self, name):
+        attribute = getattr(self.user_model, name)
+
+        if callable(attribute):
+
+            @wraps(attribute)
+            def wrapper(*args, **kwargs):
+                return attribute(*args, **kwargs)
+            
+            return wrapper
+        
+        return attribute
+
+
+    def predict(self, X: Any)-> Any:
+        if self.predict_kind == "predict":
+            return self.user_model.predict(X)
+        
+        return self.user_model(X)
 
     def _predict_kind(self):
         if callable(getattr(self.user_model, "predict", None)):
@@ -40,10 +61,3 @@ class ModelAdapter:
                     return framework
 
         return self.model_module.partition(".")[0]
-    
-    def predict(self, X: Any)-> Any:
-        if self.predict_kind == "predict":
-            return self.user_model.predict(X)
-        
-        if self.predict_kind == "callable":
-            return self.user_model(X)
