@@ -3,7 +3,7 @@ from typing import Annotated
 from pathlib import Path
 from annotated_doc import Doc
 
-DEFAULT_TEMPLATE_DIR = Path(__file__).parent / "templates"
+DEFAULT_TEMPLATE_DIR = ( Path(__file__).parent / "templates" / "home.html" )
 
 class HomePage:
 
