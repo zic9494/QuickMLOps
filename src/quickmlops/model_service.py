@@ -9,9 +9,9 @@ from quickmlops.home_page import HomePage
 class ModelService:
     def __init__(
         self,
-        ml_model: Annotated[Any, Doc("")]
+        ml_model: Annotated[Any, Doc("")] = None
     ):
-        self.user_model = ModelAdapter(ml_model)
+        self.user_model = self.user_model = ModelAdapter(ml_model) if ml_model is not None else None
         self.home_html = HomePage()
 
     def __getattr__(self, name):
@@ -27,9 +27,8 @@ class ModelService:
         
         return attribute
 
-    def home_page(self)-> Callable[[], Any]:
-        # TODO: 返回首頁的程式碼
-        pass
+    def home_page(self)-> str:
+       return self.home_html.get_page()
 
     def perdict(self):
         return self.user_model.predict()

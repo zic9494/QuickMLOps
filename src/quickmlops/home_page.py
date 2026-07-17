@@ -11,7 +11,8 @@ class HomePage:
         self,
         *, 
         template_path: Annotated[str | Path | None, Doc("")] = None,
-        title : Annotated[str, Doc("")] = "QuickMLOps"
+        title : Annotated[str, Doc("")] = "QuickMLOps",
+        static_url: Annotated[str | Path, Doc("")]="/static"
     ) -> None:
         
         path = Path(template_path or DEFAULT_TEMPLATE_DIR).resolve()
@@ -22,11 +23,12 @@ class HomePage:
 
         self.template = enviroment.get_template(path.name)
         self.title = title
+        self.static_url = static_url
 
     def get_page(self) -> str:
         context = {
-            "title" : self.title
+            "title" : self.title,
+            "static_url": self.static_url
         }
-        
         return self.template.render(context)
 

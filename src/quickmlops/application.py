@@ -1,11 +1,13 @@
 from typing import Annotated, Any, TypeVar, Awaitable
 from collections.abc import Callable, Coroutine, Sequence
+from pathlib import Path
 
 from annotated_doc import Doc
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import Response, HTMLResponse
+from starlette.staticfiles import StaticFiles
 from starlette.routing import BaseRoute
 from starlette.types import Lifespan, ASGIApp
 from starlette.datastructures import State
@@ -16,6 +18,7 @@ import quickmlops.routing as routing
 from quickmlops.types_defs import DecoratedCallable
 # Generalization and Prompting IDE
 AppType = TypeVar("AppType", bound="QuickMLOps")
+DEFAULT_STATIC_DIR = Path(__file__).parent / "static"
 
 
 class QuickMLOps(Starlette):
@@ -73,9 +76,23 @@ class QuickMLOps(Starlette):
 
         self.router: routing.APIRouter = routing.APIRouter(routes=routes)
     
-    def deploy_home_page(self) -> None:
-        home_page_route = routing.APIRoute("/", self.user_model.home_page(), ["GET"])
 
+
+    def deploy_home_page(self) -> None:
+
+        def app() -> HTMLResponse:
+            page = self.user_model.home_page()
+            html_pages = HTMLResponse(page)
+            return html_pages
+        
+        self.router.add_api_route("/", app, methods=["GET"])
+
+    def _deploy_static_path(self) -> None:
+        self.router.mount(
+            "/static",
+            StaticFiles(directory=DEFAULT_STATIC_DIR),
+            name="static",
+        )
 
     def include_router(self,
         router: Annotated[routing.APIRouter,Doc("")],

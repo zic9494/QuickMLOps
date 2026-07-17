@@ -8,6 +8,7 @@ dependencies = [
     "annotated-doc",
     "starlette",
     "typing-extensions",
+    "uvicorn",
 ]
 
 [build-system]

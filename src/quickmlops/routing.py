@@ -68,6 +68,9 @@ class APIRoute(routing.Route):
             if isawaitable(result):
                 result = await result
             
+            if isinstance(result, Response):
+                return result
+
             if isinstance(result, dict):
                 content = json.dumps(result)
             else :

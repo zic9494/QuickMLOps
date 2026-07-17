@@ -1,0 +1,45 @@
+<aside class="sidebar">
+    <a class="brand" href="/" aria-label="{{ title }} 首頁">
+        <span class="brand__icon" aria-hidden="true">
+            {% include "icons/sidebar/brain-circuit.svg" %}
+        </span>
+        <span class="brand__name">ML Model Hub</span>
+    </a>
+
+    <nav class="sidebar-nav" aria-label="主要導覽">
+        <a class="nav-item nav-item--active" href="/" aria-current="page">
+            {% include "icons/sidebar/box.svg" %}
+            <span>首頁</span>
+        </a>
+        <a class="nav-item" href="#models">
+            {% include "icons/sidebar/brain-circuit.svg" %}
+            <span>模型展示</span>
+        </a>
+        <a class="nav-item" href="#compare">
+            {% include "icons/sidebar/chart-column-increasing.svg" %}
+            <span>模型比較</span>
+        </a>
+        <a class="nav-item" href="#datasets">
+            {% include "icons/sidebar/database.svg" %}
+            <span>資料集</span>
+        </a>
+        <a class="nav-item" href="#api">
+            {% include "icons/sidebar/code-xml.svg" %}
+            <span>API 文件</span>
+        </a>
+        <a class="nav-item" href="#guide">
+            {% include "icons/sidebar/book-open.svg" %}
+            <span>使用指南</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <label class="theme-control">
+            {% include "icons/sidebar/moon.svg" %}
+            <span>深色模式</span>
+            <input class="theme-control__input" type="checkbox" aria-label="切換深色模式">
+            <span class="theme-control__switch" aria-hidden="true"></span>
+        </label>
+        <p class="copyright">&copy; 2024 ML Model Hub</p>
+    </div>
+</aside>
