@@ -4,6 +4,7 @@ from annotated_doc import Doc
 from typing_extensions import deprecated
 from typing import Annotated, Any, TypeVar, Awaitable
 from collections.abc import Callable, Coroutine, Sequence
+from copy import copy
 
 from starlette import routing
 from starlette.requests import Request
@@ -25,6 +26,28 @@ def request_response(func: Callable[[Request], Awaitable[Request] | Request]) ->
         await response(scope, receive, send)
 
     return app
+
+def _clone_route_with_prefix(
+    route: BaseRoute,
+    prefix: str,
+) -> BaseRoute:
+    if isinstance(route, routing.Mount):
+        return routing.Mount(
+            path=prefix + route.path,
+            app=route.app,
+            name=route.name,
+        )
+
+    cloned_route = copy(route)
+    cloned_route.path = prefix + route.path
+
+    (
+        cloned_route.path_regex,
+        cloned_route.path_format,
+        cloned_route.param_convertors,
+    ) = routing.compile_path(cloned_route.path)
+
+    return cloned_route
 
 class APIRoute(routing.Route):
     def __init__(self, path, endpoint, methods=None, name=None):
@@ -180,15 +203,10 @@ class APIRouter(routing.Router):
             )
 
         for route in router.routes:
-            route.path = prefix + route.path
-            if isinstance(route, routing.Route):
-                (
-                    route.path_regex,
-                    route.path_format,
-                    route.param_convertors,
-                ) = routing.compile_path(route.path)
-            self.routes.append(route)
-            self._mark_route_changed()
+            self.routes.append(
+                _clone_route_with_prefix(route, prefix)
+            )
+        self._mark_route_changed()
 
 
     def get(

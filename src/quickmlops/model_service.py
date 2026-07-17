@@ -12,7 +12,7 @@ class ModelService:
         ml_model: Annotated[Any, Doc("")] = None
     ):
         self.user_model = self.user_model = ModelAdapter(ml_model) if ml_model is not None else None
-        self.home_html = HomePage()
+        self.home_page = HomePage()
 
     def __getattr__(self, name):
         attribute = getattr(self.user_model, name)
@@ -27,8 +27,8 @@ class ModelService:
         
         return attribute
 
-    def home_page(self)-> str:
-       return self.home_html.get_page()
+    def get_home_page(self)-> str:
+       return self.home_page.get_page()
 
     def perdict(self):
         return self.user_model.predict()

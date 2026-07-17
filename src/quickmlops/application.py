@@ -16,10 +16,9 @@ from typing_extensions import deprecated
 from quickmlops.model_service import ModelService
 import quickmlops.routing as routing
 from quickmlops.types_defs import DecoratedCallable
+from quickmlops.constants import DEFAULT_STATIC_DIR, DEFAULT_STATIC_URL
 # Generalization and Prompting IDE
 AppType = TypeVar("AppType", bound="QuickMLOps")
-DEFAULT_STATIC_DIR = Path(__file__).parent / "static"
-
 
 class QuickMLOps(Starlette):
     def __init__(
@@ -79,19 +78,20 @@ class QuickMLOps(Starlette):
 
 
     def deploy_home_page(self) -> None:
-
         def app() -> HTMLResponse:
-            page = self.user_model.home_page()
+            page = self.user_model.get_home_page()
             html_pages = HTMLResponse(page)
             return html_pages
         
+        self._deploy_static_path()
         self.router.add_api_route("/", app, methods=["GET"])
+
 
     def _deploy_static_path(self) -> None:
         self.router.mount(
-            "/static",
+            DEFAULT_STATIC_URL,
             StaticFiles(directory=DEFAULT_STATIC_DIR),
-            name="static",
+            name="default_home_page_static",
         )
 
     def include_router(self,
@@ -99,7 +99,7 @@ class QuickMLOps(Starlette):
         *,
         prefix: Annotated[str, Doc("")] = ""
     )-> None:
-        return self.router.include_router(router, prefix=prefix)
+        self.router.include_router(router, prefix=prefix)
 
     def api_route(
         self,

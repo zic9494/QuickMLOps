@@ -3,6 +3,8 @@ from typing import Annotated
 from pathlib import Path
 from annotated_doc import Doc
 
+from quickmlops.constants import DEFAULT_STATIC_URL
+
 DEFAULT_TEMPLATE_DIR = ( Path(__file__).parent / "templates" / "home.html" )
 
 class HomePage:
@@ -12,7 +14,7 @@ class HomePage:
         *, 
         template_path: Annotated[str | Path | None, Doc("")] = None,
         title : Annotated[str, Doc("")] = "QuickMLOps",
-        static_url: Annotated[str | Path, Doc("")]="/static"
+        static_url: Annotated[str | Path, Doc("")] = DEFAULT_STATIC_URL
     ) -> None:
         
         path = Path(template_path or DEFAULT_TEMPLATE_DIR).resolve()
