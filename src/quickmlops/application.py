@@ -1,4 +1,4 @@
-from typing import Annotated, Any, TypeVar, Awaitable, List, Mapping
+from typing import Annotated, Any, TypeVar, Awaitable, List, Mapping, Dict
 from collections.abc import Callable, Coroutine, Sequence
 from pathlib import Path
 
@@ -64,7 +64,8 @@ class QuickMLOps(Starlette):
             Doc("")
         ] = ""
     ):
-        self.user_models: List[ModelService] = []
+        self._model_index = 0
+        self.user_models: Dict[int, ModelService] = {}
         self.home_page = HomePage()
         self.debug = debug
         self.title = title
@@ -79,6 +80,8 @@ class QuickMLOps(Starlette):
             Any, Callable[[Request, Any], Response | Awaitable[Response]]
         ] = {} if exception_handlers is None else dict(exception_handlers)
 
+        self.router: routing.APIRouter = routing.APIRouter(routes=routes)
+
         if ml_model is not None:
             self.include_model(ml_model)
         
@@ -89,12 +92,7 @@ class QuickMLOps(Starlette):
         elif ml_models is not None:
             for model in ml_models:
                 self.include_model(model)
-
         
-        self._model_index = 0
-        self._model_table = []
-        self.router: routing.APIRouter = routing.APIRouter(routes=routes)
-
     def deploy_home_page(self) -> None:
         def app() -> HTMLResponse:
             page = self.home_page.get_page()
@@ -109,16 +107,26 @@ class QuickMLOps(Starlette):
         user_model: Annotated[Any, Doc('')],
         *,
         name: Annotated[str | None, Doc("")] = None,
-        version: Annotated[str | None, Doc("")] = "1.0.0"
+        version: Annotated[str, Doc("")] = "1.0.0"
     ) -> None:
+        model_id = self._model_index
+
+        path = "/models"
+        self._validate_model_name() #TODO
         
-        model_servive = ModelService(
+        model_service = ModelService(
             user_model,
             name=name,
             version=version
         )
-        self.user_models.append(model_servive)
-        self._deploy_model_route()
+
+        routes = self._create_predict_route(path, model_id, name)
+
+        self._commit_model_registration(
+            model_id = model_id,
+            model_service= model_service,
+            routes = routes
+        )
         
     def include_router(self,
         router: Annotated[routing.APIRouter,Doc("")],
@@ -143,29 +151,87 @@ class QuickMLOps(Starlette):
             name="default_home_page_static",
         )
 
-    def _deploy_model_route(self, name: str | None = None) -> None:
-        path = "/models/"
+    def _get_route(self, path:str, endpoint: Any, methods: List[str],name: str | None = None) -> BaseRoute:
+        return self.router.route_class(
+            path = path,
+            endpoint=endpoint,
+            methods=methods,
+            name=name
+        )
+    
+    def _create_predict_route(self, path: str, model_id: int, name: str | None) -> List[BaseRoute]:
+        self._validate_route_path() #TODO
+        endpoint = self._create_predict_endpoint(model_id)
+                
+        routes = [self._get_route(
+            path + f"/{model_id}/predict", 
+            endpoint, 
+            ["POST"], 
+            f"model{model_id}"
+        )]
+
         if name is not None:
-            path += name
-        else:
-            path += str(self._model_index)
+            routes.append(
+                self._get_route(
+                    path + f"/{name}/predict", 
+                    endpoint, 
+                    ["POST"], 
+                    name
+                )
+            )
 
-        marker = {
-            "model_index": self._model_index,
-            "name": name,
-            "path": path
-        }
-        self._model_table.append(marker)
+        return routes
 
+    def _create_predict_endpoint(self, model_id: int):
         async def predict(request: Request):
             data = await request.json()
-            model_id = data["model_id"]
             user_model = self.user_models[model_id]
-            return user_model.perdict(data["predict"])
+            return user_model.predict(data["predict"])
+        return predict
 
-        self.router.add_api_route(path+"/predict", predict, methods=["POST"], name=(name or ("model" + str(self._model_index))))
-        self._model_index += 1
+    def _commit_model_registration(
+        self,
+        *,
+        model_id: int,
+        model_service: ModelService,
+        routes: List[BaseRoute]
+    ) -> None:
+        
+        if model_id in self.user_models:
+            raise RuntimeError(f"Model ID already exists: {model_id}")
+        
+        model_added = False
+        added_routes: List[BaseRoute] = []
 
+        try:
+            self.user_models[model_id] = model_service
+            model_added = True
+
+            for route in routes:
+                self.router.routes.append(route)
+                added_routes.append(route)
+            self.router._mark_route_changed()
+
+            self._model_index += 1
+
+        except Exception:
+            for route in reversed(added_routes):
+                self.router.routes.remove(route)
+
+            if added_routes:
+                self.router._mark_route_changed()
+
+            if model_added:
+                self.user_models.pop(model_id, None)
+
+            raise
+
+    def _validate_model_name(self):
+        pass
+
+    def _validate_route_path(self):
+        pass
+    
     def get(
         self,
         path: Annotated[str, Doc("")],

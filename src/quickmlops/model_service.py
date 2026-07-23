@@ -38,5 +38,5 @@ class ModelService:
     def get_home_page(self)-> HTMLResponse:
         return HTMLResponse(self.home_page.get_page())
 
-    def perdict(self, X: Any):
+    def predict(self, X: Any):
         return self.user_model.predict(X)
