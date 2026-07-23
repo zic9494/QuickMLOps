@@ -15,7 +15,7 @@ class ModelService:
         version: Annotated[str, Doc("")] = "1.0.0",
         stage: Annotated[str, Doc("")] = "production"
     ):
-        self.user_model = self.user_model = ModelAdapter(ml_model)
+        self.user_model = ModelAdapter(ml_model)
         self.home_page = HomePage() # Only use at ModelService Standalone
 
         self.name = name

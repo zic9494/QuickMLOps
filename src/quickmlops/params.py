@@ -1,4 +1,4 @@
-from typing import Any, get_args, get_origin, Annotated, Union
+from typing import Any, get_args, get_origin, Annotated, Union, Mapping
 from types import UnionType
 from inspect import Parameter
 
@@ -56,7 +56,8 @@ def _get_params_value(
             marker = Query()
 
     alias = marker.alias or name
-
+    
+    values : Mapping[str, Any]
     match marker.source:
         case "path":
             values = request.path_params

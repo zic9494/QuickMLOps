@@ -15,7 +15,7 @@ from starlette.types import ASGIApp, Scope, Receive, Send
 from quickmlops.types_defs import DecoratedCallable
 from quickmlops.params import _get_params_value
 
-def request_response(func: Callable[[Request], Awaitable[Request] | Request]) -> ASGIApp:
+def request_response(func: Callable[[Request], Awaitable[Response] | Response]) -> ASGIApp:
     async def app(scope: Scope, receive: Receive, send: Send):
         request = Request(scope, receive=receive)
         response = func(request)
@@ -36,6 +36,11 @@ def _clone_route_with_prefix(
             path=prefix + route.path,
             app=route.app,
             name=route.name,
+        )
+
+    if not isinstance(route, (routing.Route, routing.WebSocketRoute)):
+        raise TypeError(
+            f"Cannot apply path prefix to {type(route).__name__}"
         )
 
     cloned_route = copy(route)

@@ -47,7 +47,10 @@ class QuickMLOps(Starlette):
             Doc("")
         ] = None,
         exception_handlers: Annotated[
-            int | type[Exception],
+            Mapping[
+                int | type[Exception],
+                Callable[[Request, Any], Response | Awaitable[Response]],
+            ] | None,
             Callable[[Request, Any], Coroutine[Any, Any, Response]],
             Doc("")
         ] | None = None,
