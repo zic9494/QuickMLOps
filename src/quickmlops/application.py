@@ -1,6 +1,7 @@
 from typing import Annotated, Any, TypeVar, Awaitable, List, Mapping, Dict
 from collections.abc import Callable, Coroutine, Sequence
 from pathlib import Path
+from re import fullmatch
 
 from annotated_doc import Doc
 from starlette.applications import Starlette
@@ -103,6 +104,7 @@ class QuickMLOps(Starlette):
             return html_pages
         
         self._deploy_static_path()
+        self._deploy_model_lister()
         self.router.add_api_route("/", app, methods=["GET"])
 
     def include_model(
@@ -115,7 +117,7 @@ class QuickMLOps(Starlette):
         model_id = self._model_index
 
         path = "/models"
-        self._validate_model_name() #TODO
+        self._validate_model_name(name) #TODO
         
         model_service = ModelService(
             user_model,
@@ -154,6 +156,9 @@ class QuickMLOps(Starlette):
             name="default_home_page_static",
         )
 
+    def _deploy_model_lister(self) -> None:
+        pass
+
     def _get_route(self, path:str, endpoint: Any, methods: List[str],name: str | None = None) -> BaseRoute:
         return self.router.route_class(
             path = path,
@@ -163,9 +168,10 @@ class QuickMLOps(Starlette):
         )
     
     def _create_predict_route(self, path: str, model_id: int, name: str | None) -> List[BaseRoute]:
-        self._validate_route_path() #TODO
+
         endpoint = self._create_predict_endpoint(model_id)
-                
+
+        self._validate_route_path(path + f"/{model_id}/predict")
         routes = [self._get_route(
             path + f"/{model_id}/predict", 
             endpoint, 
@@ -174,6 +180,7 @@ class QuickMLOps(Starlette):
         )]
 
         if name is not None:
+            self._validate_route_path(path + f"/{name}/predict")
             routes.append(
                 self._get_route(
                     path + f"/{name}/predict", 
@@ -229,12 +236,39 @@ class QuickMLOps(Starlette):
 
             raise
 
-    def _validate_model_name(self):
-        pass
+    def _validate_model_name(self, name: str | None) -> None:
+        if name is None:
+            return None
 
-    def _validate_route_path(self):
-        pass
-    
+        if not fullmatch(r"^(?=.*[A-Za-z_-])[A-Za-z0-9][A-Za-z0-9_-]*$", name):
+            raise ValueError(
+                "Model name must start with an alphanumeric character "
+                "contain only letters, numbers, hyphens, or underscores, "
+                "and not consist entirely of numbers."
+            )
+
+        if any(model.name == name for model in self.user_models.values()):
+            raise ValueError(f"Model name already exists {name}")
+
+    def _validate_route_path(
+        self, 
+        path: str,
+        methods: List[str] | set[str]
+    ) -> None:
+        requested_methods = {method.upper() for method in methods}
+
+        for route in self.router.routes:
+            if getattr(route, "path", None) != path:
+                continue
+
+            existing_methods = getattr(route, "methods", set()) or set()
+
+        if requested_methods & existing_methods:
+            raise ValueError(
+                f"Route already used: {path} "
+                f"for methods {sorted(requested_methods & existing_methods)}"
+            )
+
     def get(
         self,
         path: Annotated[str, Doc("")],
