@@ -12,13 +12,14 @@ from starlette.staticfiles import StaticFiles
 from starlette.routing import BaseRoute
 from starlette.types import Lifespan, ASGIApp
 from starlette.datastructures import State
+from starlette.concurrency import run_in_threadpool
 from typing_extensions import deprecated
 
 from quickmlops.model_service import ModelService
 from quickmlops.home_page import HomePage
 import quickmlops.routing as routing
 from quickmlops.types_defs import DecoratedCallable
-from quickmlops.constants import DEFAULT_STATIC_DIR, DEFAULT_STATIC_URL
+from quickmlops.constants import DEFAULT_STATIC_DIR, DEFAULT_STATIC_URL, DEFAULT_MODEL_LISTING_URL
 # Generalization and Prompting IDE
 AppType = TypeVar("AppType", bound="QuickMLOps")
 
@@ -104,7 +105,7 @@ class QuickMLOps(Starlette):
             return html_pages
         
         self._deploy_static_path()
-        self._deploy_model_lister()
+        self._deploy_model_listing()
         self.router.add_api_route("/", app, methods=["GET"])
 
     def include_model(
@@ -156,8 +157,23 @@ class QuickMLOps(Starlette):
             name="default_home_page_static",
         )
 
-    def _deploy_model_lister(self) -> None:
-        pass
+    def _deploy_model_listing(self) -> None:
+        def listing():
+            result = []
+
+            for model_id, model in self.user_models.items():
+                data = {
+                    "model_id": model_id,
+                    "model_name": model.name,
+                    "model_module":model.model_module,
+                    "model_qualname":model.model_qualname,
+                    "model_class_path":model.model_class_path,
+                    "framework":model.framework,
+                }
+                result.append(data)
+            return {"detail": result}
+        
+        self.router.add_api_route(DEFAULT_MODEL_LISTING_URL, listing, methods=["GET"], name="model_listing")
 
     def _get_route(self, path:str, endpoint: Any, methods: List[str],name: str | None = None) -> BaseRoute:
         return self.router.route_class(
@@ -171,7 +187,7 @@ class QuickMLOps(Starlette):
 
         endpoint = self._create_predict_endpoint(model_id)
 
-        self._validate_route_path(path + f"/{model_id}/predict")
+        self._validate_route_path(path + f"/{model_id}/predict", ["POST"])
         routes = [self._get_route(
             path + f"/{model_id}/predict", 
             endpoint, 
@@ -180,7 +196,7 @@ class QuickMLOps(Starlette):
         )]
 
         if name is not None:
-            self._validate_route_path(path + f"/{name}/predict")
+            self._validate_route_path(path + f"/{name}/predict", ["POST"])
             routes.append(
                 self._get_route(
                     path + f"/{name}/predict", 
@@ -263,11 +279,11 @@ class QuickMLOps(Starlette):
 
             existing_methods = getattr(route, "methods", set()) or set()
 
-        if requested_methods & existing_methods:
-            raise ValueError(
-                f"Route already used: {path} "
-                f"for methods {sorted(requested_methods & existing_methods)}"
-            )
+            if requested_methods & existing_methods:
+                raise ValueError(
+                    f"Route already used: {path} "
+                    f"for methods {sorted(requested_methods & existing_methods)}"
+                )
 
     def get(
         self,

@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    <link rel="stylesheet" href="{{ static_url }}/home.css">
-    <link rel="stylesheet" href="{{ static_url }}/sidebar.css">
+    <link rel="stylesheet" href="{{ static_url }}/css/home.css">
+    <link rel="stylesheet" href="{{ static_url }}/css/sidebar.css">
 </head>
 <body>
     <div class="app-shell">
@@ -13,8 +13,16 @@
         {% include "sidebar.html" %}
 
         <main class="main-content">
-            <!-- 主要內容將在下一階段實作 -->
+            <div id="home" class="home-page">
+                {% include "home_part.html" %}
+            </div>
+
+            <div id="#campare">
+
+            </div>
         </main>
     </div>
+    <script src="{{ static_url }}/js/sidebar.js"></script>
+    <script src="{{ static_url }}/js/home.js"></script>
 </body>
 </html>

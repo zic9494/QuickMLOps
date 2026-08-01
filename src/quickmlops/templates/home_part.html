@@ -1,0 +1,139 @@
+<header class="page-header">
+    <div>
+        <h1>首頁</h1>
+    </div>
+    <div class="page-actions">
+        <label class="model-picker">
+            <span class="sr-only">選擇模型</span>
+            <select aria-label="選擇模型">
+                <option>房價預測模型</option>
+                <option>客戶流失預測</option>
+            </select>
+        </label>
+        <button class="button button--secondary" type="button">
+            <span aria-hidden="true">{% include "icons/home/share-2.svg" %}</span> 分享
+        </button>
+        <button class="button button--primary" type="button">
+            <span aria-hidden="true">&lt;/&gt;</span> 試用 API
+        </button>
+    </div>
+</header>
+
+<section class="model-hero" aria-labelledby="model-title">
+    <div class="model-identity">
+        <div class="model-avatar" aria-hidden="true">🌳</div>
+        <div>
+            <div class="model-title-row">
+                <h2 id="model-title">-</h2>
+                <span class="version-badge">v0.0.0</span>
+            </div>
+            <p>-</p>
+            <div class="tag-list" aria-label="模型標籤">
+                <span>XGBoost</span><span>Regression</span><span>Tabular Data</span><span>房地產</span>
+            </div>
+        </div>
+    </div>
+    <div class="model-stats">
+        <div class="stat"><span>R² 分數</span><strong class="stat--good">-</strong></div>
+        <div class="stat"><span>MAE</span><strong>- <small>萬</small></strong></div>
+        <div class="stat"><span>RMSE</span><strong>- <small>萬</small></strong></div>
+        <div class="stat"><span>訓練資料筆數</span><strong>-</strong></div>
+        <p class="updated-at">▣&nbsp; 最後更新：-</p>
+    </div>
+</section>
+
+<div class="dashboard-grid">
+    <section class="card input-card">
+        <header class="card__header">
+            <h3><span aria-hidden="true">⌕</span> 輸入特徵</h3>
+            <p>調整以下特徵值以進行預測</p>
+        </header>
+        <form class="feature-form">
+            <label>縣市
+                <select><option>台北市</option><option>新北市</option></select>
+            </label>
+            <label>房屋類型
+                <select><option>公寓</option><option>大樓</option></select>
+            </label>
+            <label>總坪數（坪）<input type="text" value="35.5"></label>
+            <label>主建物坪數（坪）<input type="text" value="25.3"></label>
+            <label>樓層<input type="text" value="8"></label>
+            <label>總樓層數<input type="text" value="12"></label>
+            <label>屋齡（年）<input type="text" value="15"></label>
+            <label>車位
+                <select><option>有車位</option><option>無車位</option></select>
+            </label>
+            <button class="predict-button" type="button">▶&nbsp;&nbsp; 進行預測</button>
+        </form>
+    </section>
+
+    <section class="card result-card">
+        <header class="card__header">
+            <h3><span aria-hidden="true">◎</span> 預測結果</h3>
+            <p>模型預測的房屋總價</p>
+        </header>
+        <div class="result-layout">
+            <div class="price-panel">
+                <span>預測房價</span>
+                <strong>1,985 <small>萬元</small></strong>
+                <hr>
+                <span>預測區間（95% 信賴區間）</span>
+                <b>1,742 ～ 2,228 萬元</b>
+            </div>
+            <dl class="result-meta">
+                <div><dt>預測時間</dt><dd>2024-06-24 14:30:25</dd></div>
+                <div><dt>模型版本</dt><dd>v1.2.0</dd></div>
+                <div><dt>預測 ID</dt><dd>pred_20240624_001</dd></div>
+            </dl>
+        </div>
+    </section>
+
+    <section class="card importance-card">
+        <header class="card__header">
+            <h3><span aria-hidden="true">▥</span> 特徵重要性</h3>
+            <p>顯示各特徵對預測結果的影響程度</p>
+        </header>
+        <div class="bar-chart" role="img" aria-label="總坪數的重要性最高，其次是地段與屋齡">
+            <div><span>總坪數</span><i style="--bar:87%"></i><em>0.287</em></div>
+            <div><span>地段</span><i style="--bar:74%"></i><em>0.245</em></div>
+            <div><span>屋齡</span><i style="--bar:47%"></i><em>0.168</em></div>
+            <div><span>樓層</span><i style="--bar:31%"></i><em>0.112</em></div>
+            <div><span>主建物坪數</span><i style="--bar:27%"></i><em>0.098</em></div>
+            <div><span>車位</span><i style="--bar:12%"></i><em>0.045</em></div>
+            <div><span>其他</span><i style="--bar:12%"></i><em>0.045</em></div>
+        </div>
+    </section>
+
+    <section class="card distribution-card">
+        <header class="card__header">
+            <h3><span aria-hidden="true">⌁</span> 預測分布</h3>
+            <p>實際值與預測值的分佈關係</p>
+        </header>
+        <div class="chart-legend"><span>● 實際值 vs 預測值</span><span>− − 理想趨勢線</span></div>
+        <svg class="scatter-chart" viewBox="0 0 600 230" role="img" aria-label="實際房價與預測房價呈正相關">
+            <defs>
+                <pattern id="scatter" width="47" height="31" patternUnits="userSpaceOnUse">
+                    <circle cx="8" cy="20" r="2.4" fill="#4f79ed" opacity=".72"/>
+                    <circle cx="20" cy="13" r="2" fill="#4f79ed" opacity=".6"/>
+                    <circle cx="34" cy="24" r="1.8" fill="#4f79ed" opacity=".8"/>
+                </pattern>
+            </defs>
+            <g class="chart-grid">
+                <path d="M48 16V196H580M48 160H580M48 124H580M48 88H580M48 52H580"/>
+            </g>
+            <path d="M48 187L580 28" class="trend-line"/>
+            <path d="M100 174 C175 150,235 127,310 100 S420 65,500 42" fill="none" stroke="url(#scatter)" stroke-width="50"/>
+            <g fill="#4f79ed" opacity=".8">
+                <circle cx="145" cy="158" r="3"/><circle cx="174" cy="137" r="2.5"/><circle cx="208" cy="147" r="2"/>
+                <circle cx="241" cy="117" r="3"/><circle cx="281" cy="124" r="2"/><circle cx="315" cy="88" r="3"/>
+                <circle cx="349" cy="105" r="2.4"/><circle cx="390" cy="70" r="2.5"/><circle cx="430" cy="79" r="2"/>
+                <circle cx="471" cy="48" r="2.6"/><circle cx="520" cy="65" r="2.5"/>
+            </g>
+            <g class="chart-labels">
+                <text x="42" y="213">0</text><text x="142" y="213">1,000</text><text x="246" y="213">2,000</text>
+                <text x="350" y="213">3,000</text><text x="454" y="213">4,000</text><text x="548" y="213">5,000</text>
+                <text x="285" y="228">實際房價（萬元）</text>
+            </g>
+        </svg>
+    </section>
+                </div>
