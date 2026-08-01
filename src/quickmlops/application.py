@@ -16,6 +16,7 @@ from starlette.concurrency import run_in_threadpool
 from typing_extensions import deprecated
 
 from quickmlops.model_service import ModelService
+from quickmlops.adapter import TaskType
 from quickmlops.home_page import HomePage
 import quickmlops.routing as routing
 from quickmlops.types_defs import DecoratedCallable
@@ -26,15 +27,6 @@ AppType = TypeVar("AppType", bound="QuickMLOps")
 class QuickMLOps(Starlette):
     def __init__(
         self: AppType,
-        ml_model: Annotated[
-            Any | None ,
-            Doc("")
-        ] = None,
-        *,
-        ml_models: Annotated[
-            List[Any] | Mapping[str, Any] | None ,
-            Doc("")
-        ] = None,
         debug: Annotated[
             bool,
             Doc("")
@@ -86,17 +78,6 @@ class QuickMLOps(Starlette):
         ] = {} if exception_handlers is None else dict(exception_handlers)
 
         self.router: routing.APIRouter = routing.APIRouter(routes=routes)
-
-        if ml_model is not None:
-            self.include_model(ml_model)
-        
-        if isinstance(ml_models, dict):
-            for name, model in ml_models.items():
-                self.include_model(model, name=name)
-
-        elif ml_models is not None:
-            for model in ml_models:
-                self.include_model(model)
         
     def deploy_home_page(self) -> None:
         def app() -> HTMLResponse:
@@ -111,6 +92,7 @@ class QuickMLOps(Starlette):
     def include_model(
         self,
         user_model: Annotated[Any, Doc('')],
+        task_type: Annotated[TaskType, Doc("")],
         *,
         name: Annotated[str | None, Doc("")] = None,
         version: Annotated[str, Doc("")] = "1.0.0"
@@ -122,6 +104,7 @@ class QuickMLOps(Starlette):
         
         model_service = ModelService(
             user_model,
+            task_type,
             name=name,
             version=version
         )
@@ -169,6 +152,7 @@ class QuickMLOps(Starlette):
                     "model_qualname":model.model_qualname,
                     "model_class_path":model.model_class_path,
                     "framework":model.framework,
+                    "task_type":model.task_type,
                 }
                 result.append(data)
             return {"detail": result}

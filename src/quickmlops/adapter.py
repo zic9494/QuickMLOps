@@ -1,15 +1,35 @@
-from typing import Any
+from typing import Any, Literal, TypeAlias
 from functools import wraps
 
+TaskType: TypeAlias = Literal[
+    "classification",
+    "regression",
+    "clustering",
+    "ranking_recommendation",
+    "unknown",
+]
+
 class ModelAdapter:
-    def __init__(self, user_model: Any):
+    TASK_CLASSIFICATION = "classification"
+    TASK_REGRESSION = "regression"
+    TASK_CLUSTERING = "clustering"
+    TASK_RANKING_RECOMMENDATION = "ranking_recommendation"
+    TASK_UNKNOWN = "unknown"
+
+    def __init__(
+            self, 
+            user_model: Any,
+            task_type: TaskType,
+        ):
         self.user_model = user_model
         self.predict_kind = self._predict_kind()
         self.model_class = type(user_model)
         self.model_module = self.model_class.__module__
         self.model_qualname = self.model_class.__qualname__
         self.model_class_path = f"{self.model_module}.{self.model_qualname}"
-        self.framework = self._detect_framework()
+
+        self.task_type = self._validate_task_type(task_type)
+        
 
     def __getattr__(self, name):
         attribute = getattr(self.user_model, name)
@@ -61,3 +81,22 @@ class ModelAdapter:
                     return framework
 
         return self.model_module.partition(".")[0]
+
+    def _validate_task_type(self, task_type: str):
+        allowed = {
+            "classification",
+            "regression",
+            "clustering",
+            "ranking_recommendation",
+        }
+
+        if task_type not in allowed:
+            raise ValueError(
+            f"Unsupported task_type: {task_type!r}. "
+            f"Expected one of: {sorted(allowed)}"
+        )
+
+        return task_type
+
+    def _detect_task_type():
+        pass
