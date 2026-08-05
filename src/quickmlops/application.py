@@ -148,10 +148,10 @@ class QuickMLOps(Starlette):
                 data = {
                     "model_id": model_id,
                     "model_name": model.name,
+                    "model_version": model.version,
                     "model_module":model.model_module,
                     "model_qualname":model.model_qualname,
                     "model_class_path":model.model_class_path,
-                    "framework":model.framework,
                     "task_type":model.task_type,
                 }
                 result.append(data)

@@ -5,7 +5,8 @@ TaskType: TypeAlias = Literal[
     "classification",
     "regression",
     "clustering",
-    "ranking_recommendation",
+    "association_rule_learning",
+    "reinforcement_learning", #not yet
     "unknown",
 ]
 
@@ -13,7 +14,8 @@ class ModelAdapter:
     TASK_CLASSIFICATION = "classification"
     TASK_REGRESSION = "regression"
     TASK_CLUSTERING = "clustering"
-    TASK_RANKING_RECOMMENDATION = "ranking_recommendation"
+    TASK_ASSOCIATION_RULE_LEARNING = "association_rule_learning"
+    TASK_REINFORCEMENT_LEARNING = "reinforcement_learning" #not yet
     TASK_UNKNOWN = "unknown"
 
     def __init__(
@@ -97,6 +99,3 @@ class ModelAdapter:
         )
 
         return task_type
-
-    def _detect_task_type():
-        pass

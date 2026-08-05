@@ -52,7 +52,17 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 28px;
-    margin-bottom: 26px;
+    margin-bottom: 0;
+}
+
+/* Header and content both use .home-page for the same horizontal alignment.
+   Override their adjoining padding so it does not create a large double gap. */
+.page-header.home-page {
+    padding-bottom: 12px;
+}
+
+#home.home-page {
+    padding-top: 12px;
 }
 
 .page-header h1 {
