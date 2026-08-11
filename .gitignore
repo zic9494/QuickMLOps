@@ -3,3 +3,5 @@ src/quickmlops/__pycache__
 TODO
 *-info
 expect_home_page*.png
+__pycache__/
+*.py[cod]
