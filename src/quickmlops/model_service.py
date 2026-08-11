@@ -9,7 +9,8 @@ class ModelService:
     def __init__(
         self,
         ml_model: Annotated[Any, Doc("")],
-        task_type: Annotated[TaskType, Doc("")],
+        *,
+        task_type: Annotated[TaskType, Doc("")] = "unknown",
         name: Annotated[str | None, Doc("")] = None,
         version: Annotated[str, Doc("")] = "1.0.0",
         stage: Annotated[str, Doc("")] = "production",

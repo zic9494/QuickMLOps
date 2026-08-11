@@ -104,7 +104,7 @@ class QuickMLOps(Starlette):
         
         model_service = ModelService(
             user_model,
-            task_type,
+            task_type=task_type,
             name=name,
             version=version
         )
@@ -261,7 +261,7 @@ class QuickMLOps(Starlette):
             if getattr(route, "path", None) != path:
                 continue
 
-            existing_methods = getattr(route, "methods", set()) or set()
+            existing_methods: set[str] = getattr(route, "methods", set()) or set()
 
             if requested_methods & existing_methods:
                 raise ValueError(
