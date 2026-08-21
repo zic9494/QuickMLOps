@@ -35,7 +35,7 @@ class ClassificationEvaluator(BaseEvaluator[ClassificationData]):
         target: ArrayLike,
         prediction: ArrayLike,
         labels: ArrayLike | None = None,
-    ):
+    ) -> ClassificationData:
         y_true, y_pred = self._validate_inputs(target, prediction)
         y_score = None
         
@@ -68,7 +68,7 @@ class ClassificationEvaluator(BaseEvaluator[ClassificationData]):
         probabilities: ArrayLike,
         *,
         labels: ArrayLike
-    ):
+    ) -> ClassificationData:
         y_true, y_score = self._validate_muticlass_input(target, probabilities)
         y_score = self._validate_probabilities(y_score)
         resolved_labels = self._validate_labels(labels)
@@ -110,7 +110,7 @@ class ClassificationEvaluator(BaseEvaluator[ClassificationData]):
         positive_label: Any ,
         negative_label: Any ,
         threshold: float = 0.5,
-    ):
+    )->ClassificationData:
         y_true, positive_score = self._validate_inputs(target, probabilities)
 
         y_score = self._validate_probabilities(positive_score)
