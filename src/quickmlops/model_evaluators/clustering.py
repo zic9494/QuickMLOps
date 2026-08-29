@@ -11,7 +11,7 @@ from sklearn.metrics import (
 from typing import Any
 import numpy as np
 
-from quickmlops.evaluation import BaseEvaluator
+from quickmlops.model_evaluators.base_evaluator import BaseEvaluator
 
 @dataclass(frozen=True)
 class ClusteringData:

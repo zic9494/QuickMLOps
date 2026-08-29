@@ -5,7 +5,7 @@ from typing import Any, TypeAlias, Literal, Dict, List
 import numpy as np
 from numpy.typing import ArrayLike
 
-from quickmlops.evaluation import BaseEvaluator
+from quickmlops.model_evaluators.base_evaluator import BaseEvaluator
 
 ClassificationType: TypeAlias = Literal["binary", "multiclass"]
 

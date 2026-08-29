@@ -3,7 +3,7 @@ import numpy as np
 from numpy.typing import NDArray, ArrayLike
 from typing import Any
 
-from quickmlops.evaluation import BaseEvaluator
+from quickmlops.model_evaluators.base_evaluator import BaseEvaluator
 
 
 @dataclass(frozen=True)

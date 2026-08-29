@@ -7,13 +7,6 @@ from annotated_doc import Doc
 import numpy as np
 from numpy.typing import NDArray
 
-PredictionType: TypeAlias = Literal[
-    "default",
-    "labels",
-    "probabilities",
-    "logits"
-]
-
 EvaluationDataT = TypeVar("EvaluationDataT")
 
 class BaseEvaluator(ABC, Generic[EvaluationDataT]):
@@ -50,3 +43,4 @@ class BaseEvaluator(ABC, Generic[EvaluationDataT]):
             name: metric(data)
             for name, metric in selected_metrics.items()
         }
+
