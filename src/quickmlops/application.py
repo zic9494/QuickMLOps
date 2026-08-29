@@ -2,12 +2,14 @@ from typing import Annotated, Any, TypeVar, Awaitable, List, Mapping, Dict
 from collections.abc import Callable, Coroutine, Sequence
 from pathlib import Path
 from re import fullmatch
+from inspect import isawaitable
+from json import JSONDecodeError
 
 from annotated_doc import Doc
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.requests import Request
-from starlette.responses import Response, HTMLResponse
+from starlette.responses import Response, HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.routing import BaseRoute
 from starlette.types import Lifespan, ASGIApp
@@ -48,10 +50,13 @@ class QuickMLOps(Starlette):
             Callable[[Request, Any], Coroutine[Any, Any, Response]],
             Doc("")
         ] | None = None,
-        lifespan: Annotated[
-            Lifespan[AppType] | None,
-            Doc("")
-        ] | None = None,
+
+        # TODO
+        # lifespan: Annotated[
+        #     Lifespan[AppType] | None,
+        #     Doc("")
+        # ] | None = None,
+        
         title: Annotated[
             str,
             Doc("")
@@ -95,13 +100,10 @@ class QuickMLOps(Starlette):
         task_type: Annotated[TaskType, Doc("")],
         *,
         name: Annotated[str | None, Doc("")] = None,
+        path: str = "/model",
         version: Annotated[str, Doc("")] = "1.0.0"
     ) -> None:
-        model_id = self._model_index
 
-        path = "/models"
-        self._validate_model_name(name) #TODO
-        
         model_service = ModelService(
             user_model,
             task_type=task_type,
@@ -109,14 +111,40 @@ class QuickMLOps(Starlette):
             version=version
         )
 
-        routes = self._create_predict_route(path, model_id, name)
+        self.include_model_service(model_service, path=path)
 
+    def include_model_service(
+        self,
+        service: ModelService,
+        *,
+        path: str = "/model"
+    ) -> None:
+
+        if not isinstance(service, ModelService):
+            raise TypeError("service must be an instance of ModelService")
+
+        if not isinstance(path, str) or not path.startswith("/"):
+            raise ValueError("Model path must start with '/'")
+
+        if path != "/" and "//" in path:
+            raise ValueError("Model path cannot contain consecutive slashes")
+
+        if path == "/":
+            path = ""
+        else:
+            path = path.rstrip("/")
+        
+        self._validate_model_name(service.name)
+        
+        model_id = self._model_index
+        routes = self._create_predict_route(path, model_id, service.name)
+        
         self._commit_model_registration(
             model_id = model_id,
-            model_service= model_service,
+            model_service= service,
             routes = routes
         )
-        
+
     def include_router(self,
         router: Annotated[routing.APIRouter,Doc("")],
         *,
@@ -193,10 +221,23 @@ class QuickMLOps(Starlette):
         return routes
 
     def _create_predict_endpoint(self, model_id: int):
+
         async def predict(request: Request):
-            data = await request.json()
+            data = await self._validate_predict_endpoint_request(request)
+
+            if isinstance(data, JSONResponse):
+                return data
+
             user_model = self.user_models[model_id]
-            return user_model.predict(data["predict"])
+            result = await run_in_threadpool(
+                user_model.predict,
+                data["predict"]
+            )
+
+            if isawaitable(result):
+                result = await result
+            return result
+
         return predict
 
     def _commit_model_registration(
@@ -269,6 +310,23 @@ class QuickMLOps(Starlette):
                     f"for methods {sorted(requested_methods & existing_methods)}"
                 )
 
+    async def _validate_predict_endpoint_request(self, request: Request) -> dict | JSONResponse:
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            return JSONResponse(
+                {"detail": "Request body must be valid JSON"},
+                status_code=400,
+            )
+
+        if not isinstance(data, dict) or "predict" not in data:
+            return JSONResponse(
+                {"detail": "Missing required field: predict"},
+                status_code=422,
+            )
+
+        return data
+            
     def get(
         self,
         path: Annotated[str, Doc("")],
