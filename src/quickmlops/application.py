@@ -101,7 +101,8 @@ class QuickMLOps(Starlette):
         *,
         name: Annotated[str | None, Doc("")] = None,
         path: str = "/model",
-        version: Annotated[str, Doc("")] = "1.0.0"
+        version: Annotated[str, Doc("")] = "1.0.0",
+        expose_predict: bool = True,
     ) -> None:
 
         model_service = ModelService(
@@ -111,13 +112,18 @@ class QuickMLOps(Starlette):
             version=version
         )
 
-        self.include_model_service(model_service, path=path)
+        self.include_model_service(
+            model_service,
+            path=path,
+            expose_predict=expose_predict
+        )
 
     def include_model_service(
         self,
         service: ModelService,
         *,
-        path: str = "/model"
+        path: str = "/model",
+        expose_predict: bool = True,
     ) -> None:
 
         if not isinstance(service, ModelService):
@@ -137,7 +143,11 @@ class QuickMLOps(Starlette):
         self._validate_model_name(service.name)
         
         model_id = self._model_index
-        routes = self._create_predict_route(path, model_id, service.name)
+        routes = (
+            self._create_predict_route(path, model_id, service.name)
+            if expose_predict
+            else []
+        )
         
         self._commit_model_registration(
             model_id = model_id,
