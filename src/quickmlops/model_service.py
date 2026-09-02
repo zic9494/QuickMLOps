@@ -1,4 +1,4 @@
-from typing import Annotated, Any, List
+from typing import Annotated, Any, List, Dict
 from collections.abc import Callable
 from annotated_doc import Doc
 from functools import wraps
@@ -18,7 +18,7 @@ class ModelService:
         tags: Annotated[List[str] | None, Doc("")] = None
     ):
         self.user_model = ModelAdapter(ml_model, task_type)
-
+        self.evaluation_result : Dict[str, Any] | None
         self.name = name
         self.version = version
         self.stage = stage

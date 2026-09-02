@@ -4,16 +4,16 @@ from quickmlops.model_evaluators.base_evaluator import BaseEvaluator
 from quickmlops.model_evaluators.classification import ClassificationEvaluator, ClassificationData
 from quickmlops.model_evaluators.clustering import ClusteringEvaluator, ClusteringData
 from quickmlops.model_evaluators.regression import RegressionEvaluator, RegressionData
+from quickmlops.types_defs import TaskType
 
-
-TaskType: TypeAlias = Literal[
-    "classification",
-    "regression",
-    "clustering"
-]
+EvaluationData: TypeAlias = (
+    ClassificationData
+    | RegressionData
+    | ClusteringData
+)
 
 class EvaluationService:
-
+    
     def evaluator_for(
         self,
         task_type: TaskType
@@ -31,6 +31,6 @@ class EvaluationService:
     def submit(
         self,
         evaluator: BaseEvaluator,
-        data: ClusteringData | ClassificationData | RegressionData
+        data: EvaluationData
     )-> Dict[str, Any]:
         return evaluator.evaluate(data)

@@ -18,11 +18,11 @@ from starlette.concurrency import run_in_threadpool
 from typing_extensions import deprecated
 
 from quickmlops.model_service import ModelService
-from quickmlops.adapter import TaskType
 from quickmlops.home_page import HomePage
 import quickmlops.routing as routing
-from quickmlops.types_defs import DecoratedCallable
+from quickmlops.types_defs import DecoratedCallable, TaskType
 from quickmlops.constants import DEFAULT_STATIC_DIR, DEFAULT_STATIC_URL, DEFAULT_MODEL_LISTING_URL
+from quickmlops.evaluation_service import EvaluationService, EvaluationData
 # Generalization and Prompting IDE
 AppType = TypeVar("AppType", bound="QuickMLOps")
 
@@ -68,6 +68,7 @@ class QuickMLOps(Starlette):
     ):
         self._model_index = 0
         self.user_models: Dict[int, ModelService] = {}
+        self.evaluation_service = EvaluationService()
         self.home_page = HomePage()
         self.debug = debug
         self.title = title
@@ -98,6 +99,7 @@ class QuickMLOps(Starlette):
         self,
         user_model: Annotated[Any, Doc('')],
         task_type: Annotated[TaskType, Doc("")],
+        evaluation_data: EvaluationData | None = None,
         *,
         name: Annotated[str | None, Doc("")] = None,
         path: str = "/model",
@@ -114,13 +116,15 @@ class QuickMLOps(Starlette):
 
         self.include_model_service(
             model_service,
+            evaluation_data,
             path=path,
-            expose_predict=expose_predict
+            expose_predict=expose_predict,
         )
 
     def include_model_service(
         self,
         service: ModelService,
+        evaluation_data: EvaluationData | None = None,
         *,
         path: str = "/model",
         expose_predict: bool = True,
@@ -143,11 +147,29 @@ class QuickMLOps(Starlette):
         self._validate_model_name(service.name)
         
         model_id = self._model_index
-        routes = (
-            self._create_predict_route(path, model_id, service.name)
-            if expose_predict
-            else []
+        routes: list[BaseRoute] = []
+        service.evaluation_result = self._run_model_evaluation(
+            task_type=service.user_model.task_type,
+            data=evaluation_data,
         )
+
+        if expose_predict:
+            routes.extend(
+                self._create_predict_route(
+                    path,
+                    model_id,
+                    service.name
+                )
+            )
+
+        if evaluation_data is not None:
+            routes.extend(
+                self._create_evaluation_route(
+                    path,
+                    model_id,
+                    service.name
+                )
+            )
         
         self._commit_model_registration(
             model_id = model_id,
@@ -230,7 +252,7 @@ class QuickMLOps(Starlette):
 
         return routes
 
-    def _create_predict_endpoint(self, model_id: int):
+    def _create_predict_endpoint(self, model_id: int) -> Callable[[Request], Any]:
 
         async def predict(request: Request):
             data = await self._validate_predict_endpoint_request(request)
@@ -250,6 +272,59 @@ class QuickMLOps(Starlette):
 
         return predict
 
+    def _create_evaluation_route(self, path, model_id: int, name:str | None) -> List[BaseRoute]:
+        endpoint = self._create_evaluation_endpoint(model_id)
+
+        routes = []
+        
+        id_path = f"{path}/{model_id}/evaluation"
+        self._validate_route_path(id_path, ["GET"])
+        routes.append(
+            self._get_route(
+                id_path,
+                endpoint,
+                ["GET"],
+                f"model{model_id}_evaluation"
+            )
+        )
+
+        if name is not None:
+            name_path = f"{path}/{name}/evaluation"
+            self._validate_route_path(name_path, ["GET"])
+            routes.append(
+                self._get_route(
+                    name_path,
+                    endpoint,
+                    ["GET"],
+                    f"{name}_evaluation"
+                )
+            )
+
+        return routes
+
+    def _create_evaluation_endpoint(self, model_id: int) -> Callable[..., Any]:
+        async def evaluation():
+            model_service = self.user_models[model_id]
+
+            return {
+                "model_id": model_id,
+                "model_name": model_service.name,
+                "evaluation": model_service.evaluation_result
+            }
+
+        return evaluation
+
+    def _run_model_evaluation(
+        self,
+        task_type: TaskType,
+        data: EvaluationData | None
+    ) -> dict[str, Any] | None:
+        if data is None:
+            return None
+
+        evaluator = self.evaluation_service.evaluator_for(task_type)
+        return self.evaluation_service.submit(evaluator, data)
+        
     def _commit_model_registration(
         self,
         *,

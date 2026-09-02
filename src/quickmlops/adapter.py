@@ -1,12 +1,6 @@
 from typing import Any, Literal, TypeAlias
 from functools import wraps
-
-TaskType: TypeAlias = Literal[
-    "classification",
-    "regression",
-    "clustering",
-    "unknown",
-]
+from quickmlops.types_defs import TaskType
 
 class ModelAdapter:
     TASK_CLASSIFICATION = "classification"
