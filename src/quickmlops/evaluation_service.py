@@ -13,9 +13,9 @@ EvaluationData: TypeAlias = (
 )
 
 class EvaluationService:
-    
+
+    @staticmethod
     def evaluator_for(
-        self,
         task_type: TaskType
     ) -> BaseEvaluator:
         match task_type:
@@ -28,8 +28,8 @@ class EvaluationService:
             case _:
                 raise ValueError("Cannot evaluate a model with an unknown task type.")
 
+    @staticmethod
     def submit(
-        self,
         evaluator: BaseEvaluator,
         data: EvaluationData
     )-> Dict[str, Any]:
