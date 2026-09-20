@@ -1,4 +1,5 @@
 let Models = []
+const evaluatoionReslut = new Map()
 
 window.addEventListener("DOMContentLoaded", async (event)=>{
     init()
@@ -6,10 +7,27 @@ window.addEventListener("DOMContentLoaded", async (event)=>{
 
 async function init(){
     await getModels()
-    renderHomePage(0)
+    await renderHomePage(0)
     renderHeader("首頁")
 }
 
+
+function setStatValue(element, value) {
+    const text = String(value ?? "-");
+    const match = text.match(/^([+-]?\d+(?:\.\d+)?)e([+-]?\d+)$/i);
+
+    if (!match) {
+        element.textContent = text;
+        return;
+    }
+
+    const exponent = document.createElement("sup");
+    exponent.textContent = String(Number(match[2]));
+
+    element.replaceChildren(`${match[1]} × 10`, exponent);
+}
+
+// fetch
 async function getModels(){
     const response = await fetch(
         "/_quickmlops/models",
@@ -25,6 +43,33 @@ async function getModels(){
     Models = reslut
 }
 
+async function getModelEvaluation(model_id){
+    if (evaluatoionReslut.has(model_id)){
+        return evaluatoionReslut.get(model_id)
+    }
+
+    const response = await fetch(
+        `/model/${model_id}/evaluation`,
+        {
+            method: "GET"
+        }
+    )
+    if (response.status == 404){
+        evaluatoionReslut.set(model_id, null)
+        return null
+    }
+
+    if (!response.ok){
+        throw new Error("Fetch model list error")
+    }
+
+    const reslut = (await response.json())["evaluation"]
+    evaluatoionReslut.set(model_id, reslut)
+
+    return reslut
+}
+
+// render
 function renderHeader(title, modelSelect = true){
     
     const selectElement = document.getElementById("model-select")
@@ -37,7 +82,7 @@ function renderHeader(title, modelSelect = true){
     document.getElementById("header-title").textContent = title
 }
 
-function renderHomePage(targetModel){
+async function renderHomePage(targetModel){
     let renderModel
     for (const Model of Models){
         if (Model["model_id"] == targetModel){
@@ -56,6 +101,68 @@ function renderHomePage(targetModel){
         badge.textContent ="v"+ renderModel["model_version"]
     }
 
+    const data = await getModelEvaluation(targetModel)
+    renderEvaluation(renderModel["task_type"] ,data)
+}
+
+function renderEvaluation(task_type, data){
+    const renderers = {
+        classification: renderClassification,
+        regression: renderRegression,
+        clustering: renderClustering,
+    }
+
+    clearEvaluation()
+
+    // if (!data) {
+    //     renderEvaluationEmpty()
+    //     return
+    // }
+
+    const render = renderers[task_type]
+    if (!render){
+        // renderEvaluationUnsupported
+        return 
+    }
+
+    render(data)
+}
+
+function clearEvaluation(){
+    const container = document.getElementById("model-stats")
+    container.removeChild()
+}
+
+function renderStats(data){
+    const container = document.getElementById("model-stats")
+
+    const elements = data.map(([key, value])=>{
+        const stat = document.createElement("div");
+        stat.className = "stat";
+
+        const title = document.createElement("span");
+        title.textContent = key;
+
+        const number = document.createElement("strong");
+        number.textContent = value ?? "-";
+
+        stat.append(title, number);
+        return stat;
+    })
+
+    container.replaceChildren(...elements)
+}
+
+function renderClassification(data){
+    renderStats(data)
+}
+
+function renderRegression(data){
+    renderStats(data)
+}
+
+function renderClustering(data){
+    renderStats(data)
 }
 
 function headerSelect(container){
